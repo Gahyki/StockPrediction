@@ -5,23 +5,24 @@ import numpy as np
 import datetime as dt
 import os
 from sklearn.preprocessing import MinMaxScaler
-# import tensorflow as tf
+import tensorflow as tf
 
+tf.compat.v1.disable_eager_execution()
 # Read csv file (df for dataframe)
 df = pd.read_csv('KO.csv', usecols=['Date', 'Open', 'High', 'Low', 'Close'])
 
 # # Displaying cvs data
-# Initialize size of graph
-plt.figure(figsize=(18, 9))
-
-# Average price of day
-plt.plot(range(df.shape[0]), (df['Low']+df['High'])/2.0)
-
-# X axis of every 14 days
-plt.xticks(range(0, df.shape[0], 14), df['Date'].loc[::14], rotation=45)
-plt.xlabel('Date', fontsize=18)
-plt.ylabel('Mid Price', fontsize=18)
-plt.show()
+# # Initialize size of graph
+# plt.figure(figsize=(18, 9))
+#
+# # Average price of day
+# plt.plot(range(df.shape[0]), (df['Low']+df['High'])/2.0)
+#
+# # X axis of every 14 days
+# plt.xticks(range(0, df.shape[0], 14), df['Date'].loc[::14], rotation=45)
+# plt.xlabel('Date', fontsize=18)
+# plt.ylabel('Mid Price', fontsize=18)
+# plt.show()
 
 # Training set and test set
 high = np.array(df.loc[:, 'High'])
@@ -79,15 +80,15 @@ for pred_idx in range(window_size, N):
 
 print('MSE error for standard averaging: %.5f'%(0.5*np.mean(mse_errors)))
 
-# Display training set results
-plt.figure(figsize=(18, 9))
-plt.plot(range(df.shape[0]), all_mid_data, color='b', label='True')
-plt.plot(range(window_size, N), std_avg_predictions, color='orange', label='Prediction')
-plt.xticks(range(0, df.shape[0], 14), df['Date'].loc[::14], rotation=45)
-plt.xlabel('Date')
-plt.ylabel('Mid Price')
-plt.legend(fontsize=18)
-plt.show()
+# # Display training set results
+# plt.figure(figsize=(18, 9))
+# plt.plot(range(df.shape[0]), all_mid_data, color='b', label='True')
+# plt.plot(range(window_size, N), std_avg_predictions, color='orange', label='Prediction')
+# plt.xticks(range(0, df.shape[0], 14), df['Date'].loc[::14], rotation=45)
+# plt.xlabel('Date')
+# plt.ylabel('Mid Price')
+# plt.legend(fontsize=18)
+# plt.show()
 
 
 window_size = 5
@@ -112,14 +113,14 @@ for pred_idx in range(1, N):
 
 print('MSE error for EMA averaging: %.5f'%(0.5*np.mean(mse_errors)))
 
-plt.figure(figsize=(18, 9))
-plt.plot(range(df.shape[0]), all_mid_data, color='b', label='True')
-plt.plot(range(0, N), run_avg_predictions, color='orange', label='Prediction')
-#plt.xticks(range(0,df.shape[0],50),df['Date'].loc[::50],rotation=45)
-plt.xlabel('Date')
-plt.ylabel('Mid Price')
-plt.legend(fontsize=18)
-plt.show()
+# plt.figure(figsize=(18, 9))
+# plt.plot(range(df.shape[0]), all_mid_data, color='b', label='True')
+# plt.plot(range(0, N), run_avg_predictions, color='orange', label='Prediction')
+# #plt.xticks(range(0,df.shape[0],50),df['Date'].loc[::50],rotation=45)
+# plt.xlabel('Date')
+# plt.ylabel('Mid Price')
+# plt.legend(fontsize=18)
+# plt.show()
 
 
 class DataGeneratorSeq(object):
@@ -164,25 +165,31 @@ class DataGeneratorSeq(object):
 
     def reset_indices(self):
         for b in range(self._batch_size):
-            self._cursor[b] = np.random.randint(0,min((b+1)*self._segments,self._prices_length-1))
+            self._cursor[b] = np.random.randint(0, min((b+1)*self._segments,self._prices_length-1))
 
 
 
-# dg = DataGeneratorSeq(train_data,5,5)
-# u_data, u_labels = dg.unroll_batches()
-#
-# for ui, (dat, lbl) in enumerate(zip(u_data, u_labels)):
-#     print('\n\nUnrolled index %d'%ui)
-#     dat_ind = dat
-#     lbl_ind = lbl
-#     print('\tInputs: ', dat)
-#     print('\n\tOutput:', lbl)
-#
-# D = 1 # Dimensionality of the data. Since your data is 1-D this would be 1
-# num_unrollings = 50 # Number of time steps you look into the future.
-# batch_size = 500 # Number of samples in a batch
-# num_nodes = [200,200,150] # Number of hidden nodes in each layer of the deep LSTM stack we're using
-# n_layers = len(num_nodes) # number of layers
-# dropout = 0.2 # dropout amount
-#
-# tf.reset_default_graph() # This is important in case you run this multiple times
+dg = DataGeneratorSeq(train_data,5,5)
+u_data, u_labels = dg.unroll_batches()
+
+for ui, (dat, lbl) in enumerate(zip(u_data, u_labels)):
+    print('\n\nUnrolled index %d'%ui)
+    dat_ind = dat
+    lbl_ind = lbl
+    print('\tInputs: ', dat)
+    print('\n\tOutput:', lbl)
+
+D = 1 # Dimensionality of the data. Since your data is 1-D this would be 1
+num_unrollings = 5 # Number of time steps you look into the future.
+batch_size = 25 # Number of samples in a batch
+num_nodes = [200, 200, 150] # Number of hidden nodes in each layer of the deep LSTM stack we're using
+n_layers = len(num_nodes) # number of layers
+dropout = 0.2 # dropout amount
+
+tf.compat.v1.reset_default_graph() # This is important in case you run this multiple times
+train_inputs, train_outputs = [], []
+for ui in range(num_unrollings):
+    print(ui)
+    train_inputs.append(tf.compat.v1.placeholder(tf.float32, shape=(batch_size, D), name='train_inputs_%d'%ui))
+    train_outputs.append(tf.compat.v1.placeholder(tf.float32, shape=(batch_size, 1), name='train_outputs_%d'%ui))
+

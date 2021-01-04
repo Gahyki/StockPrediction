@@ -189,7 +189,20 @@ dropout = 0.2 # dropout amount
 tf.compat.v1.reset_default_graph() # This is important in case you run this multiple times
 train_inputs, train_outputs = [], []
 for ui in range(num_unrollings):
-    print(ui)
     train_inputs.append(tf.compat.v1.placeholder(tf.float32, shape=(batch_size, D), name='train_inputs_%d'%ui))
     train_outputs.append(tf.compat.v1.placeholder(tf.float32, shape=(batch_size, 1), name='train_outputs_%d'%ui))
 
+# for each layer, create each node
+lstm_cells = [tf.keras.layers.LSTMCell(units=num_nodes[li]) for li in range(n_layers)]
+
+drop_lstm_cells = [tf.compat.v1.nn.rnn_cell.DropoutWrapper(lstm,
+        input_keep_prob=1.0,
+        output_keep_prob=1.0-dropout,
+        state_keep_prob=1.0-dropout)
+    for lstm in lstm_cells]
+
+drop_multi_cell = tf.keras.layers.StackedRNNCells(drop_lstm_cells)
+multi_cell = tf.keras.layers.StackedRNNCells(lstm_cells)
+
+w = tf.compat.v1.get_variable('w',shape=[num_nodes[-1], 1], initializer=tf.keras.initializers.GlorotUniform())
+b = tf.compat.v1.get_variable('b',initializer=tf.random.uniform([1],-0.1,0.1))

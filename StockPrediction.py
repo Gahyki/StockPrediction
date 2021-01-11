@@ -220,13 +220,15 @@ for li in range(n_layers):
 # a specific format. Read more at: https://www.tensorflow.org/api_docs/python/tf/nn/dynamic_rnn
 all_inputs = tf.concat([tf.expand_dims(t, 0) for t in train_inputs], axis=0)
 
-# # all_outputs is [seq_length, batch_size, num_nodes]
-# # all_lstm_outputs, state = tf.keras.layers.RNN(
-# #     drop_multi_cell, all_inputs, initial_state=tuple(initial_state),
-# #     time_major=True, dtype=tf.float32)
-# #
-# # all_lstm_outputs = tf.reshape(all_lstm_outputs, [batch_size*num_unrollings, num_nodes[-1]])
-# #
-# # all_outputs = tf.compat.v1.nn.xw_plus_b(all_lstm_outputs, w, b)
-# #
-# # split_outputs = tf.split(all_outputs, num_unrollings, axis=0)
+# all_outputs is [seq_length, batch_size, num_nodes]
+all_lstm_outputs, state = tf.compat.v1.nn.dynamic_rnn(
+    drop_multi_cell, all_inputs, initial_state=tuple(initial_state),
+    time_major=True, dtype=tf.float32)
+# state = tf.keras.layers.RNN(drop_multi_cell, time_major=True)(all_inputs, initial_state=tuple(initial_state))
+# all_lstm_outputs = tf.keras.layers.RNN(drop_multi_cell, time_major=True)(all_inputs, initial_state=tuple(initial_state))[1:]
+
+all_lstm_outputs = tf.reshape(all_lstm_outputs, [batch_size*num_unrollings, num_nodes[-1]])
+
+all_outputs = tf.compat.v1.nn.xw_plus_b(all_lstm_outputs, w, b)
+
+split_outputs = tf.split(all_outputs, num_unrollings, axis=0)

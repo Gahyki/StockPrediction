@@ -5,13 +5,13 @@ import pandas as pd
 
 df = pd.read_csv('KO.csv', usecols=['Date', 'Open', 'High', 'Low', 'Close'])
 # dataframe
-print(df)
+print("This is a dataframe: \n", df)
 
 # shape
-print(df.shape)
+print("This is the shape of the dataframe: \n", df.shape)
 
 # first 10 rows
-print(df.head(10))
+print("This is the first 10 rows: \n", df.head(10))
 
 # boxplot graph displayed in the same way as candlestick chart
 df.transpose()[1:].plot(kind='box', sharex=False, sharey=False)
